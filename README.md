@@ -1,8 +1,8 @@
 # SisDoa - Sistema de Controle de Doações
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/sisdoa)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/duduferalves/sisdoa)
 [![Python](https://img.shields.io/badge/python-3.12+-green.svg)](https://www.python.org/)
-[![CI](https://github.com/yourusername/sisdoa/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/sisdoa/actions)
+[![CI](https://github.com/duduferalves/sisdoa/actions/workflows/ci.yml/badge.svg)](https://github.com/duduferalves/sisdoa/actions)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 ## Sobre o Projeto
