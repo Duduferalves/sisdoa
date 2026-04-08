@@ -1,0 +1,33 @@
+# Ruff configuration for SisDoa
+# https://docs.astral.sh/ruff/
+
+line-length = 100
+target-version = "py312"
+src = ["src"]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear (common bugs)
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade (Python version upgrades)
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+
+ignore = [
+    "E501",  # line too long (ruff formatter handles this)
+    "F401",  # imported but unused (needed for runtime like timezone.utc)
+]
+
+[lint.isort]
+known-first-party = ["sisdoa"]
+required-imports = ["from __future__ import annotations"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
