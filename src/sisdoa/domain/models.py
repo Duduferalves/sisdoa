@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 
 from sqlalchemy import Column, Date, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base
@@ -28,7 +28,7 @@ class DonationItem(Base):
     quantity: Mapped[int] = Column(Integer, nullable=False, default=0)
     expiration_date: Mapped[date] = Column(Date, nullable=False)
     created_at: Mapped[datetime] = Column(
-        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime, nullable=False, default=lambda: datetime.now(datetime.UTC)
     )
 
     def __repr__(self) -> str:
