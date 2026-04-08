@@ -173,7 +173,9 @@ def print_inventory_table(items: list[DonationItem], expiry_threshold: int = 7) 
         console.print(
             Panel(
                 f"[red][bold]{len(expired)} item(s) VENCIDO(S)[/bold][/red]\n\n"
-                + "\n".join(f"  • {i.name} (venceu em {format_date(i.expiration_date)})" for i in expired),
+                + "\n".join(
+                    f"  • {i.name} (venceu em {format_date(i.expiration_date)})" for i in expired
+                ),
                 title="⚠️ ALERTA DE VALIDADE",
                 border_style="red",
             )
@@ -212,7 +214,10 @@ def print_alerts(items: list[DonationItem], expiry_threshold: int = 7) -> None:
         console.print(
             Panel(
                 f"[red][bold]{len(expired)} item(s) VENCIDO(S)[/bold][/red]\n"
-                + "\n".join(f"  • {i.name} - {i.quantity} un. (venceu: {format_date(i.expiration_date)})" for i in expired),
+                + "\n".join(
+                    f"  • {i.name} - {i.quantity} un. (venceu: {format_date(i.expiration_date)})"
+                    for i in expired
+                ),
                 title="🚨 ITENS VENCIDOS",
                 border_style="red",
             )

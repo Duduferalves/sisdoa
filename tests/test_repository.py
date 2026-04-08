@@ -31,9 +31,7 @@ class TestCreateItem:
         assert item.expiration_date == date.today() + timedelta(days=30)
         assert item.created_at is not None
 
-    def test_create_item_with_zero_quantity(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_create_item_with_zero_quantity(self, test_repo: DonationItemRepository) -> None:
         """Edge case: create item with zero quantity (valid for pre-registration)."""
         item = test_repo.create(
             name="Reserva Futura",
@@ -44,9 +42,7 @@ class TestCreateItem:
         assert item.quantity == 0
         assert item.id is not None
 
-    def test_create_item_with_past_expiration(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_create_item_with_past_expiration(self, test_repo: DonationItemRepository) -> None:
         """Edge case: allow creating expired items (may be needed for inventory audit)."""
         # Repository doesn't validate date - that's a CLI concern
         item = test_repo.create(
@@ -62,7 +58,9 @@ class TestCreateItem:
 class TestReadItems:
     """Tests for reading donation items."""
 
-    def test_get_by_id_success(self, sample_item: DonationItem, test_repo: DonationItemRepository) -> None:
+    def test_get_by_id_success(
+        self, sample_item: DonationItem, test_repo: DonationItemRepository
+    ) -> None:
         """Happy path: retrieve existing item by ID."""
         item = test_repo.get_by_id(sample_item.id)
 
@@ -88,9 +86,7 @@ class TestReadItems:
         assert len(items) >= 1
         assert any(i.id == sample_item.id for i in items)
 
-    def test_get_all_ordered_by_expiration(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_get_all_ordered_by_expiration(self, test_repo: DonationItemRepository) -> None:
         """Verify items are ordered by expiration date."""
         # Create items with different expiration dates
         test_repo.create("Item A", 1, date.today() + timedelta(days=100))
@@ -107,9 +103,7 @@ class TestReadItems:
 class TestGetNearExpiration:
     """Tests for near-expiration queries."""
 
-    def test_get_near_expiration_none(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_get_near_expiration_none(self, test_repo: DonationItemRepository) -> None:
         """All items are far from expiration."""
         test_repo.create("Item Longo", 10, date.today() + timedelta(days=365))
         test_repo.create("Item Medio", 5, date.today() + timedelta(days=30))
@@ -131,9 +125,7 @@ class TestGetNearExpiration:
 
     def test_get_expired_items(self, test_repo: DonationItemRepository) -> None:
         """Get only expired items."""
-        expired = test_repo.create(
-            "Vencido", 5, date.today() - timedelta(days=10)
-        )
+        expired = test_repo.create("Vencido", 5, date.today() - timedelta(days=10))
         test_repo.create("Valido", 10, date.today() + timedelta(days=30))
 
         expired_items = test_repo.get_expired()
@@ -214,41 +206,27 @@ class TestDomainLogic:
 
     def test_is_near_expiration_true(self, test_repo: DonationItemRepository) -> None:
         """Item is near expiration."""
-        item = test_repo.create(
-            "Proximo", 5, date.today() + timedelta(days=3)
-        )
+        item = test_repo.create("Proximo", 5, date.today() + timedelta(days=3))
         assert item.is_near_expiration(threshold_days=7) is True
 
     def test_is_near_expiration_false(self, test_repo: DonationItemRepository) -> None:
         """Item is far from expiration."""
-        item = test_repo.create(
-            "Longe", 5, date.today() + timedelta(days=60)
-        )
+        item = test_repo.create("Longe", 5, date.today() + timedelta(days=60))
         assert item.is_near_expiration(threshold_days=7) is False
 
-    def test_days_until_expiration_positive(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_days_until_expiration_positive(self, test_repo: DonationItemRepository) -> None:
         """Calculate days until future expiration."""
         days = 45
-        item = test_repo.create(
-            "Futuro", 5, date.today() + timedelta(days=days)
-        )
+        item = test_repo.create("Futuro", 5, date.today() + timedelta(days=days))
         assert item.days_until_expiration() == days
 
-    def test_days_until_expiration_negative(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_days_until_expiration_negative(self, test_repo: DonationItemRepository) -> None:
         """Calculate days for already expired item."""
         days_ago = 10
-        item = test_repo.create(
-            "Vencido", 5, date.today() - timedelta(days=days_ago)
-        )
+        item = test_repo.create("Vencido", 5, date.today() - timedelta(days=days_ago))
         assert item.days_until_expiration() == -days_ago
 
-    def test_days_until_expiration_today(
-        self, test_repo: DonationItemRepository
-    ) -> None:
+    def test_days_until_expiration_today(self, test_repo: DonationItemRepository) -> None:
         """Item expires today (0 days)."""
         item = test_repo.create("Hoje", 5, date.today())
         assert item.days_until_expiration() == 0

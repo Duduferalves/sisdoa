@@ -25,9 +25,7 @@ class Database:
             db_url: SQLAlchemy database URL. Defaults to SQLite file.
         """
         self.engine = create_engine(db_url, echo=False)
-        self.SessionLocal = sessionmaker(
-            autocommit=False, autoflush=False, bind=self.engine
-        )
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self._create_tables()
 
     def _create_tables(self) -> None:
@@ -58,9 +56,7 @@ class DonationItemRepository:
         """
         self.db = db
 
-    def create(
-        self, name: str, quantity: int, expiration_date: date
-    ) -> DonationItem:
+    def create(self, name: str, quantity: int, expiration_date: date) -> DonationItem:
         """Create a new donation item.
 
         Args:
@@ -127,11 +123,7 @@ class DonationItemRepository:
         try:
             stmt = select(DonationItem).order_by(DonationItem.expiration_date)
             items = session.execute(stmt).scalars().all()
-            return [
-                item
-                for item in items
-                if item.days_until_expiration() <= threshold_days
-            ]
+            return [item for item in items if item.days_until_expiration() <= threshold_days]
         finally:
             session.close()
 

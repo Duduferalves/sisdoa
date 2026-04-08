@@ -128,9 +128,7 @@ class TestListCommand:
         assert result.exit_code == 0
         assert "Nenhum item registrado" in result.stdout
 
-    def test_list_with_items(
-        self, cli_runner: CliRunner, cli_repo: DonationItemRepository
-    ) -> None:
+    def test_list_with_items(self, cli_runner: CliRunner, cli_repo: DonationItemRepository) -> None:
         """Happy path: list items in inventory."""
         cli_repo.create("Arroz 5kg", 10, date.today() + timedelta(days=30))
         cli_repo.create("Feijão 1kg", 5, date.today() + timedelta(days=60))
@@ -278,9 +276,7 @@ class TestDeleteCommand:
 class TestInfoCommand:
     """Tests for the 'info' command."""
 
-    def test_info_success(
-        self, cli_runner: CliRunner, cli_repo: DonationItemRepository
-    ) -> None:
+    def test_info_success(self, cli_runner: CliRunner, cli_repo: DonationItemRepository) -> None:
         """Happy path: show item info."""
         item = cli_repo.create("Arroz 5kg", 10, date.today() + timedelta(days=30))
 

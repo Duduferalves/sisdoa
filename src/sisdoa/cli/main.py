@@ -69,9 +69,7 @@ def add_item(
 
     # Check if date is in the past
     if exp_date < date.today():
-        print_error(
-            f"Data de validade não pode ser passada: {expiration_date} já venceu."
-        )
+        print_error(f"Data de validade não pode ser passada: {expiration_date} já venceu.")
         raise typer.Exit(code=1)
 
     repo = get_repository()
@@ -96,11 +94,7 @@ def list_items(
 
     if alerts_only:
         items = repo.get_all()
-        filtered = [
-            i
-            for i in items
-            if i.days_until_expiration() <= EXPIRY_THRESHOLD_DAYS
-        ]
+        filtered = [i for i in items if i.days_until_expiration() <= EXPIRY_THRESHOLD_DAYS]
         if not filtered:
             print_success("Nenhum item requer atenção no momento.")
             return
