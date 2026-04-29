@@ -7,7 +7,7 @@
 
 ## Sobre o Projeto
 
-**SisDoa** é uma aplicação CLI (Command Line Interface) desenvolvida para pequenas ONGs gerenciareM o estoque e a validade de doações de alimentos e medicamentos.
+**SisDoa** é uma aplicação CLI (Command Line Interface) desenvolvida para pequenas ONGs gerenciarem o estoque e a validade de doações de alimentos e medicamentos.
 
 ### A Dor que Resolve
 
@@ -20,6 +20,7 @@ O SisDoa resolve isso com:
 - Alertas automáticos de itens próximos do vencimento
 - Interface simples via terminal (sem necessidade de navegador)
 - Persistência local (SQLite) - sem necessidade de servidor
+- Busca automática de produtos por código de barras via API Open Food Facts
 
 ---
 
@@ -32,7 +33,8 @@ O SisDoa resolve isso com:
 | ORM | SQLAlchemy 2.0 (Core) |
 | Banco de Dados | SQLite |
 | Gerenciador de Pacotes | uv |
-| Testes | pytest |
+| Testes | pytest + respx |
+| HTTP Client | httpx |
 | Linting/Format | Ruff |
 | CI/CD | GitHub Actions |
 
@@ -47,6 +49,7 @@ src/sisdoa/
 ├── domain/          # Entidades e regras de negócio
 ├── repository/      # Acesso a dados (SQLite)
 ├── cli/             # Interface com usuário (Typer)
+├── infrastructure/  # Integrações externas (API Gateway)
 └── config.py        # Configurações
 ```
 
@@ -87,16 +90,26 @@ src/sisdoa/
 
 #### 1. Adicionar Item (`add`)
 
-Registra uma nova doação no estoque.
+Registra uma nova doação no estoque. O nome do produto é buscado automaticamente na API do Open Food Facts usando o código de barras (EAN).
 
 ```bash
-uv run sisdoa add "Arroz 5kg" 10 15/12/2026
+uv run sisdoa add 7891010101010 10 "15/12/2026"
 ```
 
 **Parâmetros:**
-- `nome`: Nome do item (ex: "Arroz 5kg", "Paracetamol 500mg")
+- `ean`: Código de barras do produto (EAN-13 ou EAN-8)
 - `quantidade`: Número de unidades
 - `data-validade`: Data no formato DD/MM/AAAA
+
+**Exemplo:**
+```bash
+# Adicionar 10 unidades de um produto com validade em 15/12/2026
+uv run sisdoa add 7891010101010 10 "15/12/2026"
+```
+
+**Tratamento de Erros:**
+- Se o produto não for encontrado na API, uma mensagem amigável será exibida
+- Erros de conexão ou timeout são tratados e informados ao usuário
 
 #### 2. Listar Itens (`list`)
 
@@ -157,10 +170,10 @@ uv run sisdoa version
 ## Exemplo de Fluxo de Uso
 
 ```bash
-# 1. Registrar doações recebidas
-uv run sisdoa add "Arroz 5kg" 20 30/06/2027
-uv run sisdoa add "Feijão 1kg" 15 15/01/2026
-uv run sisdoa add "Leite UHT" 50 10/01/2026
+# 1. Registrar doações recebidas (usando código de barras)
+uv run sisdoa add 7891010101010 20 "30/06/2027"
+uv run sisdoa add 7892020202020 15 "15/01/2026"
+uv run sisdoa add 7893030303030 50 "10/01/2026"
 
 # 2. Verificar estoque completo
 uv run sisdoa list
@@ -193,6 +206,7 @@ uv run pytest -v
 # Executar testes específicos
 uv run pytest tests/test_repository.py -v
 uv run pytest tests/test_cli.py -v
+uv run pytest tests/integration/test_api_client.py -v
 
 # Executar com coverage
 uv run pytest --cov=src/sisdoa
@@ -221,11 +235,13 @@ uv run ruff format src tests
 | `conftest.py` | Fixtures com DB em memória |
 | `test_repository.py` | Testes da camada de dados |
 | `test_cli.py` | Testes da interface CLI |
+| `tests/integration/test_api_client.py` | Testes de integração com API (mock) |
 
 **Cobertura de testes:**
 - ✅ Happy path (operações bem-sucedidas)
 - ✅ Casos de falha (estoque insuficiente, data inválida)
 - ✅ Casos limite (zero quantidade, item expirado)
+- ✅ Integração com API Open Food Facts (cenários 200 OK e 404 Not Found)
 
 ---
 
@@ -257,6 +273,90 @@ O pipeline do GitHub Actions é executado em cada `push` ou `pull request` para 
 
 ---
 
+## Deploy e Execução em Container/Nuvem
+
+O SisDoa pode ser empacotado em um container Docker para execução em ambientes de nuvem ou qualquer sistema com Docker instalado.
+
+### Pré-requisitos
+
+- Docker instalado e configurado
+- Acesso ao terminal com permissões para executar Docker
+
+### Construindo a Imagem
+
+1. **Navegue até a raiz do projeto:**
+   ```bash
+   cd sisdoa
+   ```
+
+2. **Construa a imagem Docker:**
+   ```bash
+   docker build -t sisdoa .
+   ```
+
+   **O que acontece:**
+   - A imagem base `python:3.12-slim` é baixada (se não estiver em cache)
+   - O `uv` (gerenciador de pacotes) é instalado
+   - As dependências são instaladas a partir do `pyproject.toml` e `uv.lock`
+   - O código fonte é copiado e o projeto é instalado
+
+### Executando o Container
+
+1. **Ver ajuda do comando:**
+   ```bash
+   docker run -it sisdoa --help
+   ```
+
+2. **Listar itens no estoque:**
+   ```bash
+   docker run -it sisdoa list
+   ```
+
+3. **Adicionar um novo item:**
+   ```bash
+   docker run -it sisdoa add 7891010101010 10 "15/12/2026"
+   ```
+
+4. **Ver alertas de validade:**
+   ```bash
+   docker run -it sisdoa alerts
+   ```
+
+### Persistência de Dados
+
+Por padrão, os dados são armazenados dentro do container e serão perdidos quando o container for removido. Para persistir os dados:
+
+1. **Use um volume Docker:**
+   ```bash
+   docker run -it -v sisdoa-data:/root/.sisdoa sisdoa list
+   ```
+
+2. **Ou monte um diretório local:**
+   ```bash
+   docker run -it -v /caminho/local:/root/.sisdoa sisdoa list
+   ```
+
+### Execução em Nuvem
+
+A imagem Docker pode ser executada em qualquer plataforma que suporte containers:
+
+- **AWS ECS/Fargate**
+- **Google Cloud Run**
+- **Azure Container Instances**
+- **DigitalOcean App Platform**
+
+**Exemplo com Google Cloud Run:**
+```bash
+# Build e push para Google Container Registry
+docker build -t gcr.io/SEU_PROJETO/sisdoa .
+docker push gcr.io/SEU_PROJETO/sisdoa
+
+# Deploy no Cloud Run
+gcloud run deploy sisdoa --image gcr.io/SEU_PROJETO/sisdoa
+```
+
+---
+
 ## Versionamento Semântico
 
 Este projeto segue [Semantic Versioning](https://semver.org/):
@@ -275,9 +375,10 @@ MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ---
 
-## Autor
+## Autores
 
-**Eduardo Fernandes Alves**
+- **Eduardo Fernandes Alves**
+- **Paulo**
 
 ---
 

@@ -19,6 +19,11 @@ from sisdoa.cli.views import (
     print_success,
 )
 from sisdoa.config import EXPIRY_THRESHOLD_DAYS
+from sisdoa.infrastructure.api_gateway import (
+    OpenFoodFactsGateway,
+    ProductFetchError,
+    ProductNotFoundError,
+)
 from sisdoa.repository.database import Database, DonationItemRepository
 
 app = typer.Typer(
@@ -41,16 +46,18 @@ def get_repository() -> DonationItemRepository:
 
 @app.command("add")
 def add_item(
-    name: str = typer.Argument(..., help="Nome do item (ex: 'Arroz 5kg', 'Paracetamol 500mg')"),
+    ean: str = typer.Argument(..., help="Código de barras (EAN) do produto"),
     quantity: int = typer.Argument(..., help="Quantidade de unidades"),
     expiration_date: str = typer.Argument(
         ...,
         help="Data de validade no formato DD/MM/AAAA",
     ),
 ) -> None:
-    """Registrar entrada de um item no estoque.
+    """Registrar entrada de um item no estoque usando código de barras.
 
-    Exemplo: sisdoa add "Arroz 5kg" 10 15/12/2026
+    O nome do produto será buscado automaticamente na API Open Food Facts.
+
+    Exemplo: sisdoa add 7891010101010 10 "15/12/2026"
     """
     # Validate quantity
     if quantity < 0:
@@ -72,8 +79,21 @@ def add_item(
         print_error(f"Data de validade não pode ser passada: {expiration_date} já venceu.")
         raise typer.Exit(code=1)
 
+    # Fetch product name from Open Food Facts API
+    gateway = OpenFoodFactsGateway()
+    try:
+        product_name = gateway.fetch_product_name(ean)
+    except ProductNotFoundError:
+        print_error(
+            f"Produto com código de barras '{ean}' não foi encontrado na base Open Food Facts."
+        )
+        raise typer.Exit(code=1) from None
+    except ProductFetchError as e:
+        print_error(str(e))
+        raise typer.Exit(code=1) from None
+
     repo = get_repository()
-    item = repo.create(name=name, quantity=quantity, expiration_date=exp_date)
+    item = repo.create(name=product_name, quantity=quantity, expiration_date=exp_date)
     print_item_created(item)
 
 

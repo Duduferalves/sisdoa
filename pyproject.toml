@@ -23,12 +23,14 @@ dependencies = [
     "typer>=0.9.0",
     "sqlalchemy>=2.0.0",
     "rich>=13.0.0",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",
+    "respx>=0.23.1",
 ]
 
 [project.scripts]
@@ -57,14 +59,23 @@ select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
     "F",   # Pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear (common bugs)
     "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
+    "UP",  # pyupgrade (Python version upgrades)
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
 ]
 ignore = [
-    "E501",  # line too long (handled by formatter)
+    "E501",  # line too long (ruff formatter handles this)
+    "F401",  # imported but unused (needed for runtime like timezone.utc)
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["sisdoa"]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
