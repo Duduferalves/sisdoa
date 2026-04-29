@@ -42,10 +42,15 @@ class TestAddCommand:
         self, cli_runner: CliRunner, cli_repo: DonationItemRepository
     ) -> None:
         """Happy path: add item with valid data."""
-        with patch("sisdoa.cli.main.get_repository", return_value=cli_repo):
+        with (
+            patch("sisdoa.cli.main.get_repository", return_value=cli_repo),
+            patch(
+                "sisdoa.cli.main.OpenFoodFactsGateway.fetch_product_name", return_value="Arroz 5kg"
+            ),
+        ):
             result = cli_runner.invoke(
                 app,
-                ["add", "Arroz 5kg", "10", "15/12/2026"],
+                ["add", "7891010101010", "10", "15/12/2026"],
             )
 
         assert result.exit_code == 0
@@ -65,7 +70,7 @@ class TestAddCommand:
         with patch("sisdoa.cli.main.get_repository", return_value=cli_repo):
             result = cli_runner.invoke(
                 app,
-                ["add", "Arroz", "10", "2026-12-15"],  # Wrong format
+                ["add", "7891010101010", "10", "2026-12-15"],  # Wrong format
             )
 
         assert result.exit_code == 1
@@ -80,7 +85,7 @@ class TestAddCommand:
         with patch("sisdoa.cli.main.get_repository", return_value=cli_repo):
             result = cli_runner.invoke(
                 app,
-                ["add", "Arroz", "10", past_date],
+                ["add", "7891010101010", "10", past_date],
             )
 
         assert result.exit_code == 1
@@ -95,7 +100,7 @@ class TestAddCommand:
         with patch("sisdoa.cli.main.get_repository", return_value=cli_repo):
             result = cli_runner.invoke(
                 app,
-                ["add", "Arroz", "--", "-5", "15/12/2026"],
+                ["add", "7891010101010", "--", "-5", "15/12/2026"],
             )
 
         # Should fail validation (either Typer parsing or our validation)
@@ -105,10 +110,15 @@ class TestAddCommand:
         self, cli_runner: CliRunner, cli_repo: DonationItemRepository
     ) -> None:
         """Edge case: zero quantity (valid for pre-registration)."""
-        with patch("sisdoa.cli.main.get_repository", return_value=cli_repo):
+        with (
+            patch("sisdoa.cli.main.get_repository", return_value=cli_repo),
+            patch(
+                "sisdoa.cli.main.OpenFoodFactsGateway.fetch_product_name", return_value="Reserva"
+            ),
+        ):
             result = cli_runner.invoke(
                 app,
-                ["add", "Reserva", "0", "15/12/2026"],
+                ["add", "7891010101010", "0", "15/12/2026"],
             )
 
         assert result.exit_code == 0
@@ -367,6 +377,6 @@ class TestHelpCommand:
         result = cli_runner.invoke(app, ["add", "--help"])
 
         assert result.exit_code == 0
-        assert "Nome do item" in result.stdout
+        assert "Código de barras (EAN) do produto" in result.stdout
         assert "Quantidade" in result.stdout
         assert "Data de validade" in result.stdout
